@@ -1,0 +1,17 @@
+﻿<Window x:Class="Chess.ChooseWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Chess"
+        mc:Ignorable="d"
+        Title="ChooseWindow" Height="164.463" Width="241.804" ResizeMode="NoResize" WindowStyle="ToolWindow">
+
+    <StackPanel>
+        <Button Content="Horse" VerticalAlignment="Center" Margin="20,10,20,0" Click="Button_Click"/>
+        <Button Content="Elephant" VerticalAlignment="Center" Margin="20,10,20,0" Click="Button_Click_1"/>
+        <Button Content="Rook" VerticalAlignment="Center" Margin="20,10,20,0" Click="Button_Click_2"/>
+        <Button Content="Queen" VerticalAlignment="Center" Margin="20,10,20,0" Click="Button_Click_3"/>
+    </StackPanel>
+
+</Window>

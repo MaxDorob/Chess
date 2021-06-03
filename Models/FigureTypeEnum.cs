@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Chess.Models
+﻿namespace Chess.Models
 {
     public enum FigureType
     {
-        Peshka,
+        Pawn,
         Horse,
-        Slon,
-        Ladya,
-        Ferz,
+        Elephant,
+        Rook,
+        Queen,
         King
     }
 }

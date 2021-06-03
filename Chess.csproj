@@ -55,6 +55,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="ChooseWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -62,6 +66,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ChooseWindow.xaml.cs">
+      <DependentUpon>ChooseWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Models\ChessGame.cs" />
     <Compile Include="Models\Figure.cs" />
@@ -107,6 +114,23 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Img\Selection.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Img\ElephantBlack.png" />
+    <Resource Include="Img\ElephantWhite.png" />
+    <Resource Include="Img\HorseBlack.png" />
+    <Resource Include="Img\HorseWhite.png" />
+    <Resource Include="Img\KingBlack.png" />
+    <Resource Include="Img\KingWhite.png" />
+    <Resource Include="Img\PawnBlack.png" />
+    <Resource Include="Img\PawnWhite.png" />
+    <Resource Include="Img\QueenBlack.png" />
+    <Resource Include="Img\QueenWhite.png" />
+    <Resource Include="Img\RookBlack.png" />
+    <Resource Include="Img\RookWhite.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Img\Available.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
