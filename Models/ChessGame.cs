@@ -8,11 +8,13 @@ namespace Chess
 {
     class ChessGame : ICloneable
     {
+        public ChessGame PreviusState, NextState;
         public Dictionary<Point, Figure> Figures;
         public Models.Side HoldingStep;
         public bool CheatOnlyMineSteps = false;
         private Point LastPawnDoubleStep = new Point(-1, -1);
         bool Dang = false, BDang = false;//Шах
+        bool inDepth = true;
         public ChessGame()
         {
             HoldingStep = Models.Side.White;
@@ -449,13 +451,20 @@ namespace Chess
 
             }
 
-            if (DangerSource?.Count > 0)
+            if (inDepth)
             {
+                List<Point> availableInCheck = new List<Point>();
                 foreach (var item in toReturn)
                 {
                     var futureVar = (ChessGame)this.Clone();
-                    futureVar.MoveFigureAt(new Point(xOfFigure,yOfFigure),)
+                    futureVar.DangerSource = new List<Point>();
+                    futureVar.inDepth = false;
+                    //futureVar.HoldingStep = (Models.Side)(-(int)HoldingStep);
+                    futureVar.MoveFigureAt(new Point(xOfFigure, yOfFigure), item);
+                    if (!futureVar.check(futureVar.Figures.First(x => x.Value.Side == HoldingStep && x.Value.Type == FigureType.King).Key, futureVar.HoldingStep))
+                        availableInCheck.Add(item);
                 }
+                return availableInCheck;
             }
 
             return toReturn;
@@ -473,7 +482,7 @@ namespace Chess
         private bool check(Point checkPoint, Side side)
         {
             //var king = Figures.First(x => x.Value.Type == Models.FigureType.King && x.Value.Side != HoldingStep);
-            if (Figures.Where(x => x.Value.Side == side).Any(x => AvailableForFigure(x.Key).Contains(checkPoint)))
+            if (Figures.Where(x => x.Value.Side == side).Any(x => AvailableForFigure(x.Key).Contains(checkPoint))||Figures.Where(x=>x.Value.Side==side&&x.Value.Type==FigureType.Pawn).Any(x=>(x.Key.Y+(int)side)==checkPoint.Y&&(int)Math.Abs(checkPoint.X-x.Key.X)==1))
                 return true;
             return false;
         }
@@ -489,7 +498,16 @@ namespace Chess
                 throw new Exception("Invalid turn");
             if (AvailableForFigure(new KeyValuePair<Point, Figure>(PosOfFigureToMove, figure)).Contains(PosToMove))
             {
-                Figures.Remove(PosOfFigureToMove);
+                //if (inDepth)
+                //{
+                    //ChessGame prevTemp=null;
+                    //if (PreviusState != null)
+                    //{
+                        //prevTemp = PreviusState;
+                    //}
+                    //PreviusState = this.Clone() as ChessGame;
+
+                //}
                 if (Figures.ContainsKey(PosToMove))
                 {
                     //рубить
@@ -504,18 +522,21 @@ namespace Chess
                     LastPawnDoubleStep = new Point(-1, -1);
                 Figures.Remove(PosOfFigureToMove);
                 Figures.Add(PosToMove, figure);
-                if (figure.Type == Models.FigureType.Pawn && (PosToMove.Y == 0 || PosToMove.Y == 7))
+                if (figure.Type == Models.FigureType.Pawn && (PosToMove.Y == 0 || PosToMove.Y == 7)&& inDepth)
                     figure.Type = ChooseCall.Invoke();
                 figure.Steps++;
-                var king = Figures.First(x => x.Value.Type == FigureType.King && x.Value.Side != HoldingStep);
+                var king = Figures.FirstOrDefault(x => x.Value.Type == FigureType.King && x.Value.Side != HoldingStep);
+                if (king.Value == null)
+                    return false;
                 //Dang = check(Figures.First(x => x.Value.Type == FigureType.King && x.Value.Side != HoldingStep).Key, HoldingStep);
-                DangerSource = new List<Point>();
+                var  tempDangerSource = new List<Point>();
                 foreach (var item in Figures.Where(x=>x.Value.Side==HoldingStep&&AvailableForFigure(x).Contains(king.Key)))
                 {
-                    DangerSource.Add(item.Key);
+                    tempDangerSource.Add(item.Key);
                 }
+                DangerSource = tempDangerSource;
                 HoldingStep = (Models.Side)(-(int)HoldingStep);
-
+                
                 return true;
 
             }
