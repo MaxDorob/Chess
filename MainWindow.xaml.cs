@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -18,12 +19,15 @@ namespace Chess
         Image Selected = new Image() { Source = new BitmapImage(new Uri("Img/Selected.png", UriKind.Relative)) };
         Image Selection = new Image() { Source = new BitmapImage(new Uri("Img/Selection.png", UriKind.Relative)) };
         Models.Side PlayerSide = Models.Side.White;
-        bool SameStation = true;//Если на одном экземпляре 2ое людей
+        public bool SameStation = true,stupidBot=false;//Если на одном экземпляре 2ое людей
         ChessGame game;
+        bool ended = false;
+        
         public MainWindow()
         {
             game = new ChessGame();
             game.ChooseCall += Game_ChooseCall;
+            game.CheckAndMateAction += Game_CheckAndMateAction;
             InitializeComponent();
 
             Selection.Visibility = Visibility.Collapsed;
@@ -91,6 +95,13 @@ namespace Chess
             //var addedTest = ChessGrid.Children[ChessGrid.Children.Add(new Image() { Source = Selected, Stretch = Stretch.Uniform })];
             //Grid.SetRow(addedTest, 1);
             //Grid.SetColumn(addedTest, 1);
+        }
+
+        private void Game_CheckAndMateAction(object sender, EventArgs e)
+        {
+            MessageBox.Show($"Игра окончена. Шах и мат для {game.HoldingStep}");
+            ended = true;
+            this.Close();
         }
 
         private Models.FigureType Game_ChooseCall()
@@ -178,7 +189,20 @@ namespace Chess
                         ChessGrid.Children.Remove(item);
                     if (SameStation)
                         PlayerSide = (Models.Side)(-(int)PlayerSide);
-
+                    else if (stupidBot&&!ended)
+                    {
+                        //Thread.Sleep(140);//Костыль, неправильно
+                        var botFigures = game.Figures.Where(x => x.Value.Side != PlayerSide).ToList();
+                        int indexToMove=0;
+                        List<Point> availableForThatFigure=null;
+                        while (availableForThatFigure == null || availableForThatFigure.Count == 0)
+                        {
+                            indexToMove = new Random().Next(botFigures.Count);
+                            availableForThatFigure =  game.AvailableForFigure(botFigures[indexToMove]);
+                        }
+                        game.MoveFigureAt(botFigures[indexToMove].Key, availableForThatFigure[new Random().Next(availableForThatFigure.Count)]);
+                        DrawCurrentSituation();
+                    }
                 }
 
             }

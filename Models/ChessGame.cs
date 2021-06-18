@@ -427,23 +427,29 @@ namespace Chess
                     }.Where(x => PointInField(x)
                     && !Figures.Where(y => y.Value.Side == figure.Side).Any(y => y.Key == x))
                     .ToList());
-                    if (figure.Steps == 0 && !Dang)
+
+                    if (inDepth)
                     {
-                        Figure rook;
-                        if (Figures.TryGetValue(new Point(0, yOfFigure), out rook) && rook.Type == FigureType.Rook && rook.Steps == 0)
-                            if (!Figures.Any(x => x.Key.X < xOfFigure && x.Key.Y == yOfFigure && x.Key.X != 0))
-                            {
-                                List<Point> betwen = new List<Point>() { new Point(1, yOfFigure), new Point(2, yOfFigure), new Point(3, yOfFigure) };
-                                if (!betwen.Any(x => check(x, (Side)(-(int)HoldingStep))))
-                                    toReturn.Add(new Point(xOfFigure - 2, yOfFigure));//Длинная рокировка, влево.
-                            }
-                        if (Figures.TryGetValue(new Point(7, yOfFigure), out rook) && rook.Type == FigureType.Rook && rook.Steps == 0)
-                            if (!Figures.Any(x => x.Key.X > xOfFigure && x.Key.Y == yOfFigure && x.Key.X != 7))
-                            {
-                                List<Point> betwen = new List<Point>() { new Point(6, yOfFigure), new Point(5, yOfFigure)};
-                                if (!betwen.Any(x => check(x, (Side)(-(int)HoldingStep))))
-                                    toReturn.Add(new Point(xOfFigure + 2, yOfFigure));//Короткая рокировка, вправо.
-                            }
+                        inDepth = false;
+                        if (figure.Steps == 0 && !check(pair.Key,(Side)(-(int)HoldingStep)))
+                        {
+                            Figure rook;
+                            if (Figures.TryGetValue(new Point(0, yOfFigure), out rook) && rook.Type == FigureType.Rook && rook.Steps == 0)
+                                if (!Figures.Any(x => x.Key.X < xOfFigure && x.Key.Y == yOfFigure && x.Key.X != 0))
+                                {
+                                    List<Point> betwen = new List<Point>() { new Point(1, yOfFigure), new Point(2, yOfFigure), new Point(3, yOfFigure) };
+                                    if (!betwen.Any(x => check(x, (Side)(-(int)HoldingStep))))
+                                        toReturn.Add(new Point(xOfFigure - 2, yOfFigure));//Длинная рокировка, влево.
+                                }
+                            if (Figures.TryGetValue(new Point(7, yOfFigure), out rook) && rook.Type == FigureType.Rook && rook.Steps == 0)
+                                if (!Figures.Any(x => x.Key.X > xOfFigure && x.Key.Y == yOfFigure && x.Key.X != 7))
+                                {
+                                    List<Point> betwen = new List<Point>() { new Point(6, yOfFigure), new Point(5, yOfFigure) };
+                                    if (!betwen.Any(x => check(x, (Side)(-(int)HoldingStep))))
+                                        toReturn.Add(new Point(xOfFigure + 2, yOfFigure));//Короткая рокировка, вправо.
+                                }
+                        }
+                        inDepth = true;
                     }
                     break;
                 default:
@@ -457,7 +463,7 @@ namespace Chess
                 foreach (var item in toReturn)
                 {
                     var futureVar = (ChessGame)this.Clone();
-                    futureVar.DangerSource = new List<Point>();
+                    //futureVar.DangerSource = new List<Point>();
                     futureVar.inDepth = false;
                     //futureVar.HoldingStep = (Models.Side)(-(int)HoldingStep);
                     futureVar.MoveFigureAt(new Point(xOfFigure, yOfFigure), item);
@@ -476,17 +482,29 @@ namespace Chess
                 return false;
             return true;
         }
-        
-        
+
+
 
         private bool check(Point checkPoint, Side side)
         {
-            //var king = Figures.First(x => x.Value.Type == Models.FigureType.King && x.Value.Side != HoldingStep);
-            if (Figures.Where(x => x.Value.Side == side).Any(x => AvailableForFigure(x.Key).Contains(checkPoint))||Figures.Where(x=>x.Value.Side==side&&x.Value.Type==FigureType.Pawn).Any(x=>(x.Key.Y+(int)side)==checkPoint.Y&&(int)Math.Abs(checkPoint.X-x.Key.X)==1))
+            if (Figures.Where(x => x.Value.Side == side).Any(x => AvailableForFigure(x.Key).Contains(checkPoint)) || Figures.Where(x => x.Value.Side == side && x.Value.Type == FigureType.Pawn).Any(x => (x.Key.Y + (int)side) == checkPoint.Y && (int)Math.Abs(checkPoint.X - x.Key.X) == 1))
                 return true;
             return false;
         }
+        private void CheckAndMate()
+        {
+            foreach (var item in Figures.Where(x=>x.Value.Side==HoldingStep))
+            {
+                if (AvailableForFigure(item).Count != 0)
+                    return;
+            }
+            if (CheckAndMateAction == null)
+                throw new Exception($"Не реализована обработка конца игры. Шах и мат для {HoldingStep}");
+            else
+                CheckAndMateAction.Invoke(null, null);
 
+        }
+        public event EventHandler CheckAndMateAction;
         public delegate Models.FigureType ChooseAction();
         public event ChooseAction ChooseCall;
         public List<Point> DangerSource;
@@ -500,12 +518,12 @@ namespace Chess
             {
                 //if (inDepth)
                 //{
-                    //ChessGame prevTemp=null;
-                    //if (PreviusState != null)
-                    //{
-                        //prevTemp = PreviusState;
-                    //}
-                    //PreviusState = this.Clone() as ChessGame;
+                //ChessGame prevTemp=null;
+                //if (PreviusState != null)
+                //{
+                //prevTemp = PreviusState;
+                //}
+                //PreviusState = this.Clone() as ChessGame;
 
                 //}
                 if (Figures.ContainsKey(PosToMove))
@@ -522,21 +540,30 @@ namespace Chess
                     LastPawnDoubleStep = new Point(-1, -1);
                 Figures.Remove(PosOfFigureToMove);
                 Figures.Add(PosToMove, figure);
-                if (figure.Type == Models.FigureType.Pawn && (PosToMove.Y == 0 || PosToMove.Y == 7)&& inDepth)
+                if (figure.Type == FigureType.King)
+                {
+                    
+                    if (PosToMove.X - PosOfFigureToMove.X == 2)
+                    {
+                        var rookToMove = Figures.First(x => x.Key == new Point(7, PosToMove.Y));
+                        Figures.Remove(rookToMove.Key);
+                        Figures.Add(new Point(PosToMove.X - 1, PosToMove.Y), rookToMove.Value);
+                    }
+                    else if(PosOfFigureToMove.X - PosToMove.X == 2)
+                    {
+                        var rookToMove = Figures.First(x => x.Key == new Point(0, PosToMove.Y));
+                        Figures.Remove(rookToMove.Key);
+                        Figures.Add(new Point(PosToMove.X + 1, PosToMove.Y), rookToMove.Value);
+                    }
+                }
+                if (figure.Type == Models.FigureType.Pawn && (PosToMove.Y == 0 || PosToMove.Y == 7) && inDepth)
                     figure.Type = ChooseCall.Invoke();
                 figure.Steps++;
                 var king = Figures.FirstOrDefault(x => x.Value.Type == FigureType.King && x.Value.Side != HoldingStep);
                 if (king.Value == null)
                     return false;
-                //Dang = check(Figures.First(x => x.Value.Type == FigureType.King && x.Value.Side != HoldingStep).Key, HoldingStep);
-                var  tempDangerSource = new List<Point>();
-                foreach (var item in Figures.Where(x=>x.Value.Side==HoldingStep&&AvailableForFigure(x).Contains(king.Key)))
-                {
-                    tempDangerSource.Add(item.Key);
-                }
-                DangerSource = tempDangerSource;
                 HoldingStep = (Models.Side)(-(int)HoldingStep);
-                
+                CheckAndMate();
                 return true;
 
             }
