@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Chess.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -132,7 +133,7 @@ namespace Chess
 
 
             }
-
+            
         }
         List<Image> AvailablePointsImages;
 

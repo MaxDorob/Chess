@@ -70,7 +70,9 @@
     <Compile Include="ChooseWindow.xaml.cs">
       <DependentUpon>ChooseWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Models\AI.cs" />
     <Compile Include="Models\ChessGame.cs" />
+    <Compile Include="Models\FieldCosts.cs" />
     <Compile Include="Models\Figure.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
