@@ -46,5 +46,49 @@ namespace Chess
             game.ShowDialog();
             this.Show();
         }
+
+        private void SmartBotGame(object sender, RoutedEventArgs e)
+        {
+            this.Hide();
+            MainWindow game = new MainWindow();
+            game.SameStation = false;
+            game.SmartBot = true;
+            game.ShowDialog();
+            this.Show();
+        }
+
+        private void SmartBotFight(object sender, RoutedEventArgs e)
+        {
+            this.Hide();
+            MainWindow game = new MainWindow();
+            game.SameStation = false;
+            game.BotVsBot = true;
+            game.ShowDialog();
+            this.Show();
+        }
+
+        private void NetSessionStart(object sender, RoutedEventArgs e)
+        {
+            ConnectWindow connectWindow = new ConnectWindow();
+            if (connectWindow.ShowDialog().Value)
+            {
+                this.Hide();
+                MainWindow game = new MainWindow();
+                game.SameStation = false;
+                game.Net = true;
+                if (connectWindow.IP == null)
+                {
+                    game.session = new Models.NetSession();
+                }
+                else
+                {
+                    game.session = new Models.NetSession(connectWindow.IP, connectWindow.Port);
+                    game.PlayerSide = Models.Side.Black;
+                }
+                game.ShowDialog();
+                this.Show();
+            }
+            
+        }
     }
 }

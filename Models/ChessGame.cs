@@ -6,7 +6,7 @@ using System.Windows;
 
 namespace Chess
 {
-    class ChessGame : ICloneable
+    public class ChessGame : ICloneable
     {
         public ChessGame PreviusState, NextState;
         public Dictionary<Point, Figure> Figures;
@@ -572,7 +572,10 @@ namespace Chess
 
         public object Clone()
         {
-            return new ChessGame(Figures, HoldingStep);
+            var toReturn= new ChessGame(Figures, HoldingStep) ;
+            toReturn.ChooseCall += this.ChooseCall;
+            toReturn.CheckAndMateAction += this.CheckAndMateAction;
+            return toReturn;
         }
     }
 }

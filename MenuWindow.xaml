@@ -9,8 +9,10 @@
     <Grid>
         <Button Content="Игра с собой" Margin="20,10,20,0" VerticalAlignment="Top" Click="PlayWithSelf"/>
         <Button Content="Тупой бот" Margin="20,36,20,0" VerticalAlignment="Top" Click="StupidBotGame"/>
-        <Button Content="По сети" Margin="20,62,20,0" VerticalAlignment="Top"/>
+        <Button Content="По сети" Margin="20,62,20,0" VerticalAlignment="Top" Click="NetSessionStart"/>
         <Button Content="Выйти" Margin="20,209,20,0" VerticalAlignment="Top" Click="Leave"/>
+        <Button Content="Умный бот" Margin="20,87,20,0" VerticalAlignment="Top" Click="SmartBotGame"/>
+        <Button Content="Bot VS Bot" Margin="20,112,20,0" VerticalAlignment="Top" Click="SmartBotFight"/>
 
     </Grid>
 </Window>

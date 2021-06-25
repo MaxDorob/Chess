@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -19,13 +20,17 @@ namespace Chess
         int xSelected = -1, ySelected = -1;
         Image Selected = new Image() { Source = new BitmapImage(new Uri("Img/Selected.png", UriKind.Relative)) };
         Image Selection = new Image() { Source = new BitmapImage(new Uri("Img/Selection.png", UriKind.Relative)) };
-        Models.Side PlayerSide = Models.Side.White;
-        public bool SameStation = true,stupidBot=false;//Если на одном экземпляре 2ое людей
+        public Models.Side PlayerSide = Models.Side.White;
+        public bool SameStation = true, stupidBot = false, SmartBot = false, BotVsBot=false,Net=false;//Если на одном экземпляре 2ое людей
         ChessGame game;
+        public NetSession session;
         bool ended = false;
+        Timer BotMoveTimer;
+
         
         public MainWindow()
         {
+
             game = new ChessGame();
             game.ChooseCall += Game_ChooseCall;
             game.CheckAndMateAction += Game_CheckAndMateAction;
@@ -93,22 +98,42 @@ namespace Chess
             Selected.MouseEnter += MoveAndShowSelection;
             DrawCurrentSituation();
             Panel.SetZIndex(Selection, 900);
+
             //var addedTest = ChessGrid.Children[ChessGrid.Children.Add(new Image() { Source = Selected, Stretch = Stretch.Uniform })];
             //Grid.SetRow(addedTest, 1);
             //Grid.SetColumn(addedTest, 1);
         }
 
+        private void BotVsBotStart(object obj)
+        {
+
+            AI aiMove = new AI();
+            aiMove.MoveExecute += AiMove_MoveExecute;
+            game.ChooseCall -= Game_ChooseCall;
+            var gameToCheck = game.Clone() as ChessGame;
+            gameToCheck.ChooseCall -= Game_ChooseCall;
+            gameToCheck.CheckAndMateAction -= Game_CheckAndMateAction;
+            int depth = game.Figures.Count < 8 ? (game.Figures.Count < 5 ? (game.Figures.Count < 2 ? 2 : 2) : 1) : 0;
+            aiMove.Calc(gameToCheck, depth);
+
+
+            BotMoveTimer.Change(0, Timeout.Infinite);
+
+        }
         private void Game_CheckAndMateAction(object sender, EventArgs e)
         {
-            MessageBox.Show($"Игра окончена. Шах и мат для {game.HoldingStep}");
+            this.Dispatcher.BeginInvoke(new Action(DrawCurrentSituation));
             ended = true;
-            this.Close();
+            MessageBox.Show($"Игра окончена. Шах и мат для {game.HoldingStep}");
+
+            this.Dispatcher.BeginInvoke(new Action(() => this.Close()));
         }
 
         private Models.FigureType Game_ChooseCall()
         {
             ChooseWindow window = new ChooseWindow();
             window.ShowDialog();
+            botChoose = window.choosed;
             return window.choosed;
         }
 
@@ -133,12 +158,14 @@ namespace Chess
 
 
             }
-            
+
         }
         List<Image> AvailablePointsImages;
 
         private void ClickOnField(object sender, MouseButtonEventArgs e)
         {
+            if (BotVsBot)
+                return;
             int xClicked = Grid.GetColumn(sender as UIElement);
             int yClicked = Grid.GetRow(sender as UIElement);
             if (xSelected == -1 || ySelected == -1)
@@ -147,6 +174,8 @@ namespace Chess
                 if (!game.Figures.TryGetValue(new Point(xClicked - 1, yClicked - 1), out figure))
                     return;
                 if (figure.Side != PlayerSide)
+                    return;
+                if (Net&& PlayerSide != game.HoldingStep)
                     return;
                 xSelected = xClicked;
                 ySelected = yClicked;
@@ -180,7 +209,8 @@ namespace Chess
             }
             if (xSelected != -1 && ySelected != -1)
             {
-                if (game.MoveFigureAt(new Point(xSelected - 1, ySelected - 1), new Point(xClicked - 1, yClicked - 1)))
+                Point moveFrom= new Point(xSelected - 1, ySelected - 1), moveTo= new Point(xClicked - 1, yClicked - 1);
+                if (game.MoveFigureAt(moveFrom, moveTo))
                 {
                     DrawCurrentSituation();
                     xSelected = -1;
@@ -190,25 +220,115 @@ namespace Chess
                         ChessGrid.Children.Remove(item);
                     if (SameStation)
                         PlayerSide = (Models.Side)(-(int)PlayerSide);
-                    else if (stupidBot&&!ended)
+                    else if (stupidBot && !ended)
                     {
                         //Thread.Sleep(140);//Костыль, неправильно
                         var botFigures = game.Figures.Where(x => x.Value.Side != PlayerSide).ToList();
-                        int indexToMove=0;
-                        List<Point> availableForThatFigure=null;
+                        int indexToMove = 0;
+                        List<Point> availableForThatFigure = null;
                         while (availableForThatFigure == null || availableForThatFigure.Count == 0)
                         {
                             indexToMove = new Random().Next(botFigures.Count);
-                            availableForThatFigure =  game.AvailableForFigure(botFigures[indexToMove]);
+                            availableForThatFigure = game.AvailableForFigure(botFigures[indexToMove]);
                         }
                         game.MoveFigureAt(botFigures[indexToMove].Key, availableForThatFigure[new Random().Next(availableForThatFigure.Count)]);
                         DrawCurrentSituation();
+                    }
+                    else if (!ended && SmartBot)
+                    {
+                        AI aiMove = new AI();
+                        aiMove.MoveExecute += AiMove_MoveExecute;
+                        game.ChooseCall -= Game_ChooseCall;
+                        var gameToCheck = game.Clone() as ChessGame;
+                        gameToCheck.ChooseCall -= Game_ChooseCall;
+                        gameToCheck.CheckAndMateAction -= Game_CheckAndMateAction;
+                        int depth = game.Figures.Count < 16 ? (game.Figures.Count < 8 ? (game.Figures.Count < 4 ? 4 : 2) : 1) : 0;
+                        aiMove.Calc(gameToCheck, depth);
+                    }
+                    else if (!ended && Net)
+                    {
+                        session.TrySendAction( moveFrom,moveTo, (int)botChoose);
+                        Task.Run(session.AsyncGetAction);
+                        //var response = session.GetAction();
+                        //game.ChooseCall -= Game_ChooseCall;
+                        //game.ChooseCall += NetChooseCall;
+                        //botChoose = response.Item3;
+                        //game.MoveFigureAt(response.Item1, response.Item2);
+                        //game.ChooseCall -= NetChooseCall;
+                        //game.ChooseCall += Game_ChooseCall;
+                        //DrawCurrentSituation();
                     }
                 }
 
             }
             // Добавить действие
 
+        }
+        FigureType botChoose;
+        private void AiMove_MoveExecute(Point arg1, Point arg2, FigureType arg3)
+        {
+            if ( ended)
+                return;
+            botChoose = arg3;
+            game.ChooseCall += BotChooseCall;
+            this.Dispatcher.BeginInvoke(new Action(() => game.MoveFigureAt(arg1, arg2))).Wait();
+            game.ChooseCall -= BotChooseCall;
+            game.ChooseCall += Game_ChooseCall;
+            this.Dispatcher.BeginInvoke(new Action(DrawCurrentSituation));
+            if (!ended && BotVsBot)
+                BotMoveTimer.Change(100, 1000);
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (BotVsBot)
+                BotMoveTimer = new Timer(new TimerCallback(BotVsBotStart), null, 3000, 1000);
+            session.OnActionReady += Session_OnActionReady;
+            if (Net && PlayerSide == Side.Black)
+            {
+                
+                Task.Run(session.AsyncGetAction);
+                //var response = session.GetAction();
+                //game.ChooseCall -= Game_ChooseCall;
+                //game.ChooseCall += NetChooseCall;
+                //botChoose = response.Item3;
+                //game.MoveFigureAt(response.Item1, response.Item2);
+                //game.ChooseCall -= NetChooseCall;
+                //game.ChooseCall += Game_ChooseCall;
+                //DrawCurrentSituation();
+
+            }
+            
+        }
+
+        private void Session_OnActionReady(Point arg1, Point arg2, FigureType arg3)
+        {
+            this.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                game.ChooseCall -= Game_ChooseCall;
+                game.ChooseCall += NetChooseCall;
+                botChoose = arg3;
+                game.MoveFigureAt(arg1, arg2);
+                game.ChooseCall -= NetChooseCall;
+                game.ChooseCall += Game_ChooseCall;
+                DrawCurrentSituation();
+            }));
+            
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            session.TryClose();
+        }
+
+        private FigureType NetChooseCall()
+        {
+            return botChoose;
+        }
+
+        private FigureType BotChooseCall()
+        {
+            return botChoose;
         }
 
         private void Added_MouseLeave(object sender, MouseEventArgs e)

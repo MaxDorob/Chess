@@ -8,7 +8,7 @@ namespace Chess.Models
 {
     static class FieldCosts
     {
-        public static double KingMod = 900, queenMod = 90, rookMod = 50, ElephantMod = 30, horseMod = 30, pawnMod = 10;
+        public static double KingMod = 900, queenMod = 90, rookMod = 50, ElephantMod = 30, horseMod = 30, pawnMod = 20;
         public static double[,] KingCost = new double[8, 8]
         {
             {-3,-4,-4,-5,-5,-4,-4,-3 },
@@ -90,22 +90,22 @@ namespace Chess.Models
                 switch (figureWhite.Value.Type)
                 {
                     case FigureType.Pawn:
-                        weight = pawnMod * PawnCost[(int)figureWhite.Key.Y, (int)figureWhite.Key.X];
+                        weight = (game.Figures.Count > 20 ? 1  : 1) * pawnMod * PawnCost[(int)figureWhite.Key.Y, (int)figureWhite.Key.X];
                         break;
                     case FigureType.Horse:
-                        weight = horseMod * HorseCost[(int)figureWhite.Key.Y, (int)figureWhite.Key.X];
+                        weight = (game.Figures.Count > 20 ? 3.8 : 1) * horseMod * HorseCost[(int)figureWhite.Key.Y, (int)figureWhite.Key.X];
                         break;
                     case FigureType.Elephant:
-                        weight = ElephantMod * ElephantCost[(int)figureWhite.Key.Y, (int)figureWhite.Key.X];
+                        weight = (game.Figures.Count > 20 ? 2 : 1) * ElephantMod * ElephantCost[(int)figureWhite.Key.Y, (int)figureWhite.Key.X];
                         break;
                     case FigureType.Rook:
-                        weight = rookMod * RookCost[(int)figureWhite.Key.Y, (int)figureWhite.Key.X];
+                        weight = (game.Figures.Count > 20 ? 1.8 : 1) * rookMod * RookCost[(int)figureWhite.Key.Y, (int)figureWhite.Key.X];
                         break;
                     case FigureType.Queen:
-                        weight = queenMod * QueenCost[(int)figureWhite.Key.Y, (int)figureWhite.Key.X];
+                        weight = (game.Figures.Count > 16 ? 3 : 1) * queenMod * QueenCost[(int)figureWhite.Key.Y, (int)figureWhite.Key.X];
                         break;
                     case FigureType.King:
-                        weight = KingMod * KingCost[(int)figureWhite.Key.Y, (int)figureWhite.Key.X];
+                        weight = (game.Figures.Count>20?0.5 :1) *KingMod * KingCost[(int)figureWhite.Key.Y, (int)figureWhite.Key.X];
                         break;
                     default:
                         break;

@@ -3,7 +3,7 @@ using System;
 
 namespace Chess
 {
-    class Figure : ICloneable
+    public class Figure : ICloneable
     {
         public Side Side;
         public FigureType Type;
