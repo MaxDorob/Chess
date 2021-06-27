@@ -21,6 +21,7 @@ namespace Chess
     {
         public string IP;
         public short Port;
+        public bool IsServer = false;
         public ConnectWindow()
         {
             InitializeComponent();
@@ -30,6 +31,7 @@ namespace Chess
         {
             IP = null;
             Port = short.Parse(PortBox.Text);
+            IsServer = true;
             DialogResult = true;
         }
 

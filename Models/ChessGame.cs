@@ -34,11 +34,11 @@ namespace Chess
             Figures.Add(new Point(2, 7), new Figure(Models.Side.White, Models.FigureType.Elephant));
             Figures.Add(new Point(5, 7), new Figure(Models.Side.White, Models.FigureType.Elephant));
 
-            Figures.Add(new Point(3, 0), new Figure(Models.Side.Black, Models.FigureType.King));
-            Figures.Add(new Point(3, 7), new Figure(Models.Side.White, Models.FigureType.King));
+            Figures.Add(new Point(4, 0), new Figure(Models.Side.Black, Models.FigureType.King));
+            Figures.Add(new Point(4, 7), new Figure(Models.Side.White, Models.FigureType.King));
 
-            Figures.Add(new Point(4, 0), new Figure(Models.Side.Black, Models.FigureType.Queen));
-            Figures.Add(new Point(4, 7), new Figure(Models.Side.White, Models.FigureType.Queen));
+            Figures.Add(new Point(3, 0), new Figure(Models.Side.Black, Models.FigureType.Queen));
+            Figures.Add(new Point(3, 7), new Figure(Models.Side.White, Models.FigureType.Queen));
             for (int i = 0; i < 8; i++)
             {
                 Figures.Add(new Point(i, 1), new Figure(Models.Side.Black, Models.FigureType.Pawn));

@@ -21,21 +21,15 @@ namespace Chess
         Image Selected = new Image() { Source = new BitmapImage(new Uri("Img/Selected.png", UriKind.Relative)) };
         Image Selection = new Image() { Source = new BitmapImage(new Uri("Img/Selection.png", UriKind.Relative)) };
         public Models.Side PlayerSide = Models.Side.White;
-        public bool SameStation = true, stupidBot = false, SmartBot = false, BotVsBot=false,Net=false;//Если на одном экземпляре 2ое людей
+        //public bool SameStation = true, stupidBot = false, SmartBot = false, BotVsBot = false, Net = false;//Если на одном экземпляре 2ое людей
+        GameType gameType = GameType.NotInited;
         ChessGame game;
         public NetSession session;
         bool ended = false;
         Timer BotMoveTimer;
 
-        
-        public MainWindow()
+        void UIInit()
         {
-
-            game = new ChessGame();
-            game.ChooseCall += Game_ChooseCall;
-            game.CheckAndMateAction += Game_CheckAndMateAction;
-            InitializeComponent();
-
             Selection.Visibility = Visibility.Collapsed;
             Selection.Focusable = false;
             Selected.Visibility = Visibility.Collapsed;
@@ -89,6 +83,7 @@ namespace Chess
 
                     Grid.SetRow(added, y);
                     Grid.SetColumn(added, x);
+                    Panel.SetZIndex(Selection, 900);
 
                 }
             }
@@ -96,13 +91,58 @@ namespace Chess
             ChessGrid.Children.Add(Selection);
             Selection.MouseUp += ClickOnField;
             Selected.MouseEnter += MoveAndShowSelection;
-            DrawCurrentSituation();
-            Panel.SetZIndex(Selection, 900);
-
-            //var addedTest = ChessGrid.Children[ChessGrid.Children.Add(new Image() { Source = Selected, Stretch = Stretch.Uniform })];
-            //Grid.SetRow(addedTest, 1);
-            //Grid.SetColumn(addedTest, 1);
         }
+        public MainWindow()
+        {
+
+            game = new ChessGame();
+            game.ChooseCall += Game_ChooseCall;
+            game.CheckAndMateAction += Game_CheckAndMateAction;
+            InitializeComponent();
+            UIInit();
+            DrawCurrentSituation();
+            
+
+            
+        }
+        #region Inititalization
+        public void InitSameStation()
+        {
+            if(gameType!=GameType.NotInited)
+                throw new Exception("AlreadyInited");
+            gameType = GameType.SameStaion;
+        }
+        public void InitStupidBot()
+        {
+            if (gameType != GameType.NotInited)
+                throw new Exception("AlreadyInited");
+            gameType = GameType.StupidBot;
+        }
+        public void InitSmartBot()
+        {
+            if (gameType != GameType.NotInited)
+                throw new Exception("AlreadyInited");
+            gameType = GameType.SmartBot;
+        }
+        public void InitBotVsBot()
+        {
+            if (gameType != GameType.NotInited)
+                throw new Exception("AlreadyInited");
+            gameType = GameType.BotVsBot;
+            BotMoveTimer = new Timer(new TimerCallback(BotVsBotStart), null, 3000, 1000);
+        }
+        public void InitNetSession(NetSession session)
+        {
+            if (gameType != GameType.NotInited)
+                throw new Exception("AlreadyInited");
+            gameType = GameType.NetSession;
+            this.session = session;
+            session.OnActionReady += Session_OnActionReady;
+            if (PlayerSide == Side.Black)
+                Task.Run(session.AsyncGetAction);
+
+        }
+        #endregion
 
         private void BotVsBotStart(object obj)
         {
@@ -164,7 +204,7 @@ namespace Chess
 
         private void ClickOnField(object sender, MouseButtonEventArgs e)
         {
-            if (BotVsBot)
+            if (gameType==GameType.BotVsBot)
                 return;
             int xClicked = Grid.GetColumn(sender as UIElement);
             int yClicked = Grid.GetRow(sender as UIElement);
@@ -175,7 +215,7 @@ namespace Chess
                     return;
                 if (figure.Side != PlayerSide)
                     return;
-                if (Net&& PlayerSide != game.HoldingStep)
+                if (gameType==GameType.NetSession && PlayerSide != game.HoldingStep)
                     return;
                 xSelected = xClicked;
                 ySelected = yClicked;
@@ -209,7 +249,7 @@ namespace Chess
             }
             if (xSelected != -1 && ySelected != -1)
             {
-                Point moveFrom= new Point(xSelected - 1, ySelected - 1), moveTo= new Point(xClicked - 1, yClicked - 1);
+                Point moveFrom = new Point(xSelected - 1, ySelected - 1), moveTo = new Point(xClicked - 1, yClicked - 1);
                 if (game.MoveFigureAt(moveFrom, moveTo))
                 {
                     DrawCurrentSituation();
@@ -218,45 +258,47 @@ namespace Chess
                     Selected.Visibility = Visibility.Collapsed;
                     foreach (var item in AvailablePointsImages)
                         ChessGrid.Children.Remove(item);
-                    if (SameStation)
-                        PlayerSide = (Models.Side)(-(int)PlayerSide);
-                    else if (stupidBot && !ended)
+
+                    if(!ended)
+                    switch (gameType)
                     {
-                        //Thread.Sleep(140);//Костыль, неправильно
-                        var botFigures = game.Figures.Where(x => x.Value.Side != PlayerSide).ToList();
-                        int indexToMove = 0;
-                        List<Point> availableForThatFigure = null;
-                        while (availableForThatFigure == null || availableForThatFigure.Count == 0)
-                        {
-                            indexToMove = new Random().Next(botFigures.Count);
-                            availableForThatFigure = game.AvailableForFigure(botFigures[indexToMove]);
-                        }
-                        game.MoveFigureAt(botFigures[indexToMove].Key, availableForThatFigure[new Random().Next(availableForThatFigure.Count)]);
-                        DrawCurrentSituation();
-                    }
-                    else if (!ended && SmartBot)
-                    {
-                        AI aiMove = new AI();
-                        aiMove.MoveExecute += AiMove_MoveExecute;
-                        game.ChooseCall -= Game_ChooseCall;
-                        var gameToCheck = game.Clone() as ChessGame;
-                        gameToCheck.ChooseCall -= Game_ChooseCall;
-                        gameToCheck.CheckAndMateAction -= Game_CheckAndMateAction;
-                        int depth = game.Figures.Count < 16 ? (game.Figures.Count < 8 ? (game.Figures.Count < 4 ? 4 : 2) : 1) : 0;
-                        aiMove.Calc(gameToCheck, depth);
-                    }
-                    else if (!ended && Net)
-                    {
-                        session.TrySendAction( moveFrom,moveTo, (int)botChoose);
-                        Task.Run(session.AsyncGetAction);
-                        //var response = session.GetAction();
-                        //game.ChooseCall -= Game_ChooseCall;
-                        //game.ChooseCall += NetChooseCall;
-                        //botChoose = response.Item3;
-                        //game.MoveFigureAt(response.Item1, response.Item2);
-                        //game.ChooseCall -= NetChooseCall;
-                        //game.ChooseCall += Game_ChooseCall;
-                        //DrawCurrentSituation();
+                        case GameType.NotInited:
+                            throw new Exception("NotInited");
+                            
+                        case GameType.SameStaion:
+                            PlayerSide = (Models.Side)(-(int)PlayerSide);
+                            break;
+                        case GameType.StupidBot:
+                            var botFigures = game.Figures.Where(x => x.Value.Side != PlayerSide).ToList();
+                            int indexToMove = 0;
+                            List<Point> availableForThatFigure = null;
+                            while (availableForThatFigure == null || availableForThatFigure.Count == 0)
+                            {
+                                indexToMove = new Random().Next(botFigures.Count);
+                                availableForThatFigure = game.AvailableForFigure(botFigures[indexToMove]);
+                            }
+                            game.MoveFigureAt(botFigures[indexToMove].Key, availableForThatFigure[new Random().Next(availableForThatFigure.Count)]);
+                            DrawCurrentSituation();
+                            break;
+                        case GameType.SmartBot:
+                            AI aiMove = new AI();
+                            aiMove.MoveExecute += AiMove_MoveExecute;
+                            game.ChooseCall -= Game_ChooseCall;
+                            var gameToCheck = game.Clone() as ChessGame;
+                            gameToCheck.ChooseCall -= Game_ChooseCall;
+                            gameToCheck.CheckAndMateAction -= Game_CheckAndMateAction;
+                            int depth = game.Figures.Count < 16 ? (game.Figures.Count < 8 ? (game.Figures.Count < 4 ? 4 : 2) : 1) : 0;
+                            aiMove.Calc(gameToCheck, depth);
+                            break;
+                        case GameType.BotVsBot:
+                            break;
+                        case GameType.NetSession:
+                            session.TrySendAction(moveFrom, moveTo, (int)botChoose);
+                            Task.Run(session.AsyncGetAction);
+                            break;
+                        default:
+                            throw new Exception("NotInited");
+                            break;
                     }
                 }
 
@@ -267,7 +309,7 @@ namespace Chess
         FigureType botChoose;
         private void AiMove_MoveExecute(Point arg1, Point arg2, FigureType arg3)
         {
-            if ( ended)
+            if (ended)
                 return;
             botChoose = arg3;
             game.ChooseCall += BotChooseCall;
@@ -275,30 +317,13 @@ namespace Chess
             game.ChooseCall -= BotChooseCall;
             game.ChooseCall += Game_ChooseCall;
             this.Dispatcher.BeginInvoke(new Action(DrawCurrentSituation));
-            if (!ended && BotVsBot)
+            if (!ended && BotMoveTimer!=null)
                 BotMoveTimer.Change(100, 1000);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (BotVsBot)
-                BotMoveTimer = new Timer(new TimerCallback(BotVsBotStart), null, 3000, 1000);
-            session.OnActionReady += Session_OnActionReady;
-            if (Net && PlayerSide == Side.Black)
-            {
-                
-                Task.Run(session.AsyncGetAction);
-                //var response = session.GetAction();
-                //game.ChooseCall -= Game_ChooseCall;
-                //game.ChooseCall += NetChooseCall;
-                //botChoose = response.Item3;
-                //game.MoveFigureAt(response.Item1, response.Item2);
-                //game.ChooseCall -= NetChooseCall;
-                //game.ChooseCall += Game_ChooseCall;
-                //DrawCurrentSituation();
 
-            }
-            
         }
 
         private void Session_OnActionReady(Point arg1, Point arg2, FigureType arg3)
@@ -313,12 +338,13 @@ namespace Chess
                 game.ChooseCall += Game_ChooseCall;
                 DrawCurrentSituation();
             }));
-            
+
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            session.TryClose();
+
+            session?.TryClose();
         }
 
         private FigureType NetChooseCall()

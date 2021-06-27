@@ -101,8 +101,9 @@ namespace Chess.Models
                 }
 
 
-                MoveExecute.Invoke(optimalMoveFrom, optimalMoveTo, type);
+                
             }
+            MoveExecute.Invoke(optimalMoveFrom, optimalMoveTo, type);
         }
 
         private void Game_CheckAndMateAction(object sender, EventArgs e)

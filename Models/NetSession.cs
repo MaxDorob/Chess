@@ -19,9 +19,10 @@ namespace Chess.Models
         /// <summary>
         /// Инициализация как сервера
         /// </summary>
-        public NetSession()
+        public NetSession(IPAddress iPAddress,short port)
         {
-            server = new TcpListener(IPAddress.Parse("127.0.0.1"),Port);
+            Port = port;
+            server = new TcpListener(iPAddress,Port);
             server.Start();
             client = server.AcceptTcpClient();
         }

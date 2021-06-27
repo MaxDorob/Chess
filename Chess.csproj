@@ -95,6 +95,7 @@
     <Compile Include="MenuWindow.xaml.cs">
       <DependentUpon>MenuWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Models\GameType.cs" />
     <Compile Include="Models\NetSession.cs" />
     <Compile Include="Models\Side.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">

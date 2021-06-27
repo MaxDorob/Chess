@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -33,6 +34,7 @@ namespace Chess
         {
             this.Hide();
             MainWindow game = new MainWindow();
+            game.InitSameStation();
             game.ShowDialog();
             this.Show();
         }
@@ -41,8 +43,7 @@ namespace Chess
         {
             this.Hide();
             MainWindow game = new MainWindow();
-            game.SameStation = false;
-            game.stupidBot = true;
+            game.InitStupidBot();
             game.ShowDialog();
             this.Show();
         }
@@ -51,8 +52,7 @@ namespace Chess
         {
             this.Hide();
             MainWindow game = new MainWindow();
-            game.SameStation = false;
-            game.SmartBot = true;
+            game.InitSmartBot();
             game.ShowDialog();
             this.Show();
         }
@@ -61,8 +61,7 @@ namespace Chess
         {
             this.Hide();
             MainWindow game = new MainWindow();
-            game.SameStation = false;
-            game.BotVsBot = true;
+            game.InitBotVsBot();
             game.ShowDialog();
             this.Show();
         }
@@ -74,16 +73,17 @@ namespace Chess
             {
                 this.Hide();
                 MainWindow game = new MainWindow();
-                game.SameStation = false;
-                game.Net = true;
-                if (connectWindow.IP == null)
+                
+                if (connectWindow.IsServer)
                 {
-                    game.session = new Models.NetSession();
+                    game.InitNetSession(new Models.NetSession(IPAddress.Any, connectWindow.Port));
+                    //game.session = new Models.NetSession(IPAddress.Any,connectWindow.Port);
                 }
                 else
                 {
-                    game.session = new Models.NetSession(connectWindow.IP, connectWindow.Port);
                     game.PlayerSide = Models.Side.Black;
+                    game.InitNetSession(new Models.NetSession(connectWindow.IP, connectWindow.Port));
+
                 }
                 game.ShowDialog();
                 this.Show();
